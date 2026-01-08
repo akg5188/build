@@ -1,6 +1,6 @@
 name: OneCloud-Build
 on:
-  workflow_dispatch:
+  workflow_dispatch: # 手动触发按钮
 
 jobs:
   build:
@@ -9,15 +9,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build Armbian
+      - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y git qemu-user-static
-          # 关键命令：直接调用 compile.sh 编译玩客云
-          ./compile.sh BOARD=onecloud BRANCH=current RELEASE=bookworm BUILD_MINIMAL=no BUILD_DESKTOP=no KERNEL_ONLY=no KERNEL_CONFIGURE=no
+          sudo apt-get install -y git qemu-user-static pigz bc jq
+          # 确保脚本有执行权限
+          chmod +x compile.sh
+
+      - name: Build Armbian
+        run: |
+          # 加上 sudo 执行，并使用官方推荐的参数格式
+          sudo ./compile.sh \
+            BOARD=onecloud \
+            BRANCH=current \
+            RELEASE=bookworm \
+            BUILD_MINIMAL=no \
+            BUILD_DESKTOP=no \
+            KERNEL_ONLY=no \
+            KERNEL_CONFIGURE=no \
+            COMPRESS_OUTPUTIMAGE=sha,gpg,img
+
+      - name: Check Output
+        run: ls -lh output/images/
 
       - name: Upload Image
         uses: actions/upload-artifact@v4
         with:
           name: Armbian-Onecloud-Image
           path: output/images/*.img*
+          if-no-files-found: error
