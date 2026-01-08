@@ -1,0 +1,23 @@
+name: OneCloud-Build
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Armbian
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git qemu-user-static
+          # 关键命令：直接调用 compile.sh 编译玩客云
+          ./compile.sh BOARD=onecloud BRANCH=current RELEASE=bookworm BUILD_MINIMAL=no BUILD_DESKTOP=no KERNEL_ONLY=no KERNEL_CONFIGURE=no
+
+      - name: Upload Image
+        uses: actions/upload-artifact@v4
+        with:
+          name: Armbian-Onecloud-Image
+          path: output/images/*.img*
